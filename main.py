@@ -16,7 +16,7 @@ client = discord.Client()
 
 def getEventInfo():
     try:
-        with urlreq.urlopen( # TODO add a timeout interval for the API server since it's a piece of $@!#
+        with urlreq.urlopen(
                 "https://census.daybreakgames.com/get/ps2:v2/world_event/?type=METAGAME&world_id=13&c:limit=1", timeout=10) as url:
             data = json.loads(url.read().decode())
     except (urlreq.HTTPError, urlreq.URLError) as error:
