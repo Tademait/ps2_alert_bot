@@ -13,6 +13,14 @@ if (TOKEN == None):
 
 client = discord.Client()
 
+# TODO get more complex info about the events, distinguish between main alerts and smaller events
+# TODO add "!alert info" parameters to let the user choose server and optional details + add argument parser for this
+# TODO in addition to parsing more info, edit the embed messages and their looks (possibly use custom emotes and images)
+# TODO add timer to periodically check for updates on the main alerts and game news (this will probably also need
+# a place to store the users preferred server ID to check on
+# TODO clean the code (most importantly imports) and repo, hide internal files, add aditional error handling,
+# write down the README and some basic usage and functionality info + screenshots on the repo main page
+
 
 def getEventInfo():
     try:
