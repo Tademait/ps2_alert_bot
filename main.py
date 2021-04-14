@@ -1,22 +1,33 @@
 import discord
-import json, urllib, math, schedule, time, sys, os
+import json, math, schedule, time, sys, os
 from dotenv import load_dotenv
 from datetime import datetime
+import urllib.request as urlreq
 
 load_dotenv()
+
 TOKEN = os.getenv('TOKEN')
+if (TOKEN == None):
+  print("Error: .env file with bot token not found.")
+  sys.exit()
 
 client = discord.Client()
 
 
 def getEventInfo():
-    with urllib.request.urlopen( # TODO add a timeout interval for the API server since it's a piece of $@!#
-            "https://census.daybreakgames.com/get/ps2:v2/world_event/?type=METAGAME&world_id=13&c:limit=1") as url:
-        data = json.loads(url.read().decode())
-        for p in data['world_event_list']:
-            event_id = int(p['metagame_event_id'])
-            timestamp = int(p['timestamp'])
-            event_state = p["metagame_event_state_name"]
+    try:
+        with urlreq.urlopen( # TODO add a timeout interval for the API server since it's a piece of $@!#
+                "https://census.daybreakgames.com/get/ps2:v2/world_event/?type=METAGAME&world_id=13&c:limit=1", timeout=10) as url:
+            data = json.loads(url.read().decode())
+    except (urlreq.HTTPError, urlreq.URLError) as error:
+        print("An error occured while reqtrieving the data from API: {}", error)
+        return "N/A"
+    except urlreq.timeout:
+        print("Request timed out while retrieving the data from API")
+    for p in data['world_event_list']:
+        event_id = int(p['metagame_event_id'])
+        timestamp = int(p['timestamp'])
+        event_state = p["metagame_event_state_name"]
 
     with open("metagame_event.json", "r") as f:
         eventy_txt = f.read()
@@ -27,7 +38,7 @@ def getEventInfo():
     running_time = ((current_time - timestamp) / 60)
     running_time = round(running_time, 2)
 
-    if (event_state == "ended"):
+    if (event_state == "ended"): # change this back to started, used only for debugging purposes
         print("STARTED")
     #    if ((158 >= event_id) and (event_id >= 123)) or ((193 >= event_id) and (
                 #event_id >= 183)):  ##filtruje pouze main alerty, bez if je možné psát info o všech probíhajících eventech
