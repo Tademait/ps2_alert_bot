@@ -24,6 +24,7 @@ def getEventInfo():
         return "N/A"
     except urlreq.timeout:
         print("Request timed out while retrieving the data from API")
+        return
     for p in data['world_event_list']:
         event_id = int(p['metagame_event_id'])
         timestamp = int(p['timestamp'])
