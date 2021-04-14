@@ -24,7 +24,7 @@ def getEventInfo():
         return "N/A"
     except urlreq.timeout:
         print("Request timed out while retrieving the data from API")
-        return
+        return "N/A"
     for p in data['world_event_list']:
         event_id = int(p['metagame_event_id'])
         timestamp = int(p['timestamp'])
@@ -62,8 +62,11 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+    orange = discord.colour.Color.from_rgb(236, 88, 9) # maybe define a complete premade embed instead of just color later
     if message.content == "!hi":
-        await message.channel.send("Hello, soldier.")
+        hello_embed = discord.Embed(title="UwU", description="Hello {}".format(message.author), color=orange)
+        hello_embed.set_image(url="https://cdn.betterttv.net/emote/60448132306b602acc598647/3x.gif")
+        await message.channel.send(embed=hello_embed)
     if message.content == "!help":
         await message.channel.send(" !alert info [server name] - prints out the current status on given server.\n"
                                    " !hi - show the bot some attention and love.\n")
