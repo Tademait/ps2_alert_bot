@@ -1,5 +1,4 @@
-import discord
-import json, math, schedule, time, sys, os
+import discord, json, math, schedule, time, sys, os
 from dotenv import load_dotenv
 from datetime import datetime
 import urllib.request as urlreq
@@ -8,8 +7,8 @@ load_dotenv()
 
 TOKEN = os.getenv('TOKEN')
 if (TOKEN == None):
-  print("Error: .env file with bot token not found.")
-  sys.exit()
+    print("Error: .env file with bot token not found.")
+    sys.exit(1)
 
 client = discord.Client()
 
@@ -42,15 +41,15 @@ def getEventInfo():
         eventy_txt = f.read()
         eventy_json = json.loads(eventy_txt)
 
-    ##get time funkce
+    #   getting the time data
     current_time = math.ceil(datetime.now().timestamp())
     running_time = ((current_time - timestamp) / 60)
     running_time = round(running_time, 2)
 
-    if (event_state == "ended"): # change this back to started, used only for debugging purposes
+    if (event_state == "ended"):    # change this back to started, used only for debugging purposes
         print("STARTED")
-    #    if ((158 >= event_id) and (event_id >= 123)) or ((193 >= event_id) and (
-                #event_id >= 183)):  ##filtruje pouze main alerty, bez if je možné psát info o všech probíhajících eventech
+    # this if statement filters out only the "main" in-game meta alerts (the event IDs may need a revisit due to a  game update):
+    #    if ((158 >= event_id) and (event_id >= 123)) or ((193 >= event_id) and (event_id >= 183)):
         for h in eventy_json["metagame_event_list"]:
             if (event_id == int(h["metagame_event_id"])):
                 event_info_name = h["name"]["en"]
@@ -59,18 +58,22 @@ def getEventInfo():
     print("no event running")
     return "N/A"    # in case function fails to return a tuple with the info
 
+
 def getTime():
     return datetime.now().strftime("[%H:%M:%S]:")
-    
+
+
 @client.event
 async def on_ready():
     print("{0} Logged in as {1.user}".format(getTime(), client))
+
 
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
-    orange = discord.colour.Color.from_rgb(236, 88, 9) # maybe define a complete premade embed instead of just color later
+    # maybe define a complete premade embed instead of just color later
+    orange = discord.colour.Color.from_rgb(236, 88, 9)
     if message.content == "!hi":
         hello_embed = discord.Embed(title="UwU", description="Hello {}".format(message.author), color=orange)
         hello_embed.set_image(url="https://cdn.betterttv.net/emote/60448132306b602acc598647/3x.gif")
