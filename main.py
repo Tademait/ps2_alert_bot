@@ -87,8 +87,8 @@ async def on_message(message):
 
     if message.content == "?help":
         help_embed = discord.Embed(title="Help", description="Usable bot commands: ", color=orange)
-        help_embed.add_field(name="?alert info [server name]", value="prints out the current status on given server.", inline=True)
-        help_embed.add_field(name="?hi", value="show the bot some attention and love.", inline=True)
+        help_embed.add_field(name="?alert info [server name]", value="prints out the current status on given server.", inline=False)
+        help_embed.add_field(name="?hi", value="show the bot some attention and love.", inline=False)
         await message.channel.send(embed=help_embed)
 
     if message.content == "?alert info":
