@@ -3,15 +3,6 @@ from dotenv import load_dotenv
 from datetime import datetime
 import urllib.request as urlreq
 
-load_dotenv()
-
-TOKEN = os.getenv('TOKEN')
-if (TOKEN == None):
-    print("Error: .env file with bot token not found.")
-    sys.exit(1)
-
-client = discord.Client()
-
 # TODO get more complex info about the events, distinguish between main alerts and smaller events
 # TODO add "!alert info" parameters to let the user choose server and optional details + add argument parser for this
 # TODO in addition to parsing more info, edit the embed messages and their looks (possibly use custom emotes and images)
@@ -21,17 +12,17 @@ client = discord.Client()
 # write down the README and some basic usage and functionality info + screenshots on the repo main page
 
 
-def getEventInfo():
+def getEventInfo(serverNumber):
     try:
         with urlreq.urlopen(
-                "https://census.daybreakgames.com/get/ps2:v2/world_event/?type=METAGAME&world_id=13&c:limit=1", timeout=10) as url:
+                f"https://census.daybreakgames.com/get/ps2:v2/world_event/?type=METAGAME&world_id={serverNumber}&c:limit=1", timeout=10) as url:
             data = json.loads(url.read().decode())
     except (urlreq.HTTPError, urlreq.URLError) as error:
         print("An error occured while reqtrieving the data from API: {}", error)
         return "N/A"
-    except urlreq.timeout:
-        print("Request timed out while retrieving the data from API")
-        return "N/A"
+    #except urlreq.timeout:
+    #   print("Request timed out while retrieving the data from API")
+    #    return "N/A"
     for p in data['world_event_list']:
         event_id = int(p['metagame_event_id'])
         timestamp = int(p['timestamp'])
@@ -65,45 +56,90 @@ def getEventInfo():
     print("no event running")
     return "N/A"    # in case function fails to return a tuple with the info
 
+async  def sendHelloInfo(message):
+    orange = discord.colour.Color.from_rgb(236, 88, 9)
+    hello_embed = discord.Embed(title="UwU", description="Hello {}".format(message.author), color=orange)
+    hello_embed.set_image(url="https://cdn.betterttv.net/emote/60448132306b602acc598647/3x.gif")
+    await message.channel.send(embed=hello_embed)
+
+async def sendAlertInfo(message, server):
+    orange = discord.colour.Color.from_rgb(236, 88, 9)
+    serverDict = {
+        "Connery"   : 1,
+        "Cobalt"    : 13,
+        "Miller"    : 10,
+        "Emerald"   : 17,
+        "SolTech"   : 40,
+        "Jaeger"    : 19
+    }
+    try:
+        info = getEventInfo(serverDict[server])
+    except:
+        await message.channel.send("Wrong server name")
+        return
+    if (info == "N/A"):
+        await message.channel.send("No info available")
+        return
+    if (info == "ENDED"):
+        alert_embed = discord.Embed(title=f"Currently running events on {server}:",
+                                    description="There is no event running at the moment", color=orange)
+        await message.channel.send(embed=alert_embed)
+    else:
+        alert_embed = discord.Embed(title=f"Currently running events on {server}:", description="\n", color=orange)
+        alert_embed.add_field(name=info[0], value=info[1] + "\n" + "Elapsed time: " + info[2] + " minutes", inline=True)
+        alert_embed.add_field(name="Current score", value=info[3][0] + " " + info[3][1] + " " + info[3][2], inline=True)
+        alert_embed.set_footer(text=message.author,
+                               icon_url="https://logo-logos.com/wp-content/uploads/2018/03/discordlogo.png")
+        await message.channel.send(embed=alert_embed)
+
+
+async def sendHelpInfo(message):
+    orange = discord.colour.Color.from_rgb(236, 88, 9)
+    help_embed = discord.Embed(title="Help", description="Usable bot commands: ", color=orange)
+    help_embed.add_field(name="?alert info [server name]", value="prints out the current status on given server.",
+                         inline=False)
+    help_embed.add_field(name="?hi", value="show the bot some attention and love.", inline=False)
+    await message.channel.send(embed=help_embed)
+
 
 def getTime():
     return datetime.now().strftime("[%H:%M:%S]:")
 
+def main():
+    load_dotenv()
+    TOKEN = os.getenv('TOKEN')
+    if (TOKEN == None):
+        print("Error: .env file with bot token not found.")
+        sys.exit(1)
 
-@client.event
-async def on_ready():
-    print("{0} Logged in as {1.user}".format(getTime(), client))
+    client = discord.Client()
+    @client.event
+    async def on_ready():
+        print("{0} Logged in as {1.user}".format(getTime(), client))
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    # maybe define a complete premade embed instead of just color later
-    orange = discord.colour.Color.from_rgb(236, 88, 9)
-    if message.content == "?hi":
-        hello_embed = discord.Embed(title="UwU", description="Hello {}".format(message.author), color=orange)
-        hello_embed.set_image(url="https://cdn.betterttv.net/emote/60448132306b602acc598647/3x.gif")
-        await message.channel.send(embed=hello_embed)
+    @client.event
+    async def on_message(message):
+        if message.author == client.user:
+            return
+        # maybe define a complete premade embed instead of just color later
+        orange = discord.colour.Color.from_rgb(236, 88, 9)
+        if message.content == "?hi":
+            await sendHelloInfo(message)
 
-    if message.content == "?help":
-        help_embed = discord.Embed(title="Help", description="Usable bot commands: ", color=orange)
-        help_embed.add_field(name="?alert info [server name]", value="prints out the current status on given server.", inline=False)
-        help_embed.add_field(name="?hi", value="show the bot some attention and love.", inline=False)
-        await message.channel.send(embed=help_embed)
+        if message.content == "?help":
+            await sendHelpInfo(message)
 
-    if message.content == "?alert info":
-        info = getEventInfo()
-        if (info == "N/A"):
-            await message.channel.send("No info available")
-        if (info == "ENDED"):
-            alert_embed = discord.Embed(title="Currently running events:", description="There is no event running at the moment", color=orange)
-            await message.channel.send(embed=alert_embed)
-        else:
-            print(info[0] + "\n" + info[1] + "\n" + info[2])
-            # await message.channel.send(info[0] + "\n" + info[1] + "\n" + "Elapsed time: " + info[2] + " minutes")
-            alert_embed = discord.Embed(title="Currently running events:",description="\n", color=orange)
-            alert_embed.add_field(name=info[0], value=info[1] + "\n" + "Elapsed time: " + info[2] + " minutes", inline=True)
-            alert_embed.add_field(name="Current score", value=info[3][0] + " " + info[3][1] + " " + info[3][2], inline=True)
-            alert_embed.set_footer(text=message.author, icon_url="https://logo-logos.com/wp-content/uploads/2018/03/discordlogo.png")
-            await message.channel.send(embed=alert_embed)
-client.run(TOKEN)
+        if message.content.startswith("?alert info"):
+            server = str(message.content).split()[-1]
+            if server == "info":
+                await sendAlertInfo(message, "Cobalt")
+            else:
+                await sendAlertInfo(message, server)
+
+    client.run(TOKEN)
+
+
+if __name__ == "__main__":
+    main()
+
+
