@@ -32,11 +32,15 @@ def getEventInfo(serverNumber):
         factionPercentage.append("🟥 TR: " + p["faction_tr"][0:4] + "%")
         factionPercentage.append("🟪 VS: " + p["faction_vs"][0:4] + "%")
 
-
-    with open("metagame_event.json", "r") as f:
-        eventy_txt = f.read()
-        eventy_json = json.loads(eventy_txt)
-
+    try:
+        filepath = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(filepath, "metagame_event.json")
+        with open(filepath, "r") as f:
+            eventy_txt = f.read()
+            eventy_json = json.loads(eventy_txt)
+    except:
+        print("Error reading the file metagame_event.json")
+        return "N/A"
     #   getting the time data
     current_time = math.ceil(datetime.now().timestamp())
     running_time = ((current_time - timestamp) / 60)
@@ -75,7 +79,7 @@ async def sendAlertInfo(message, server):
     try:
         info = getEventInfo(serverDict[server])
     except:
-        await message.channel.send("Wrong server name")
+        await message.channel.send("Wrong server name") # More like "something happened in get EventInfo"!!!
         return
     if (info == "N/A"):
         await message.channel.send("No info available")
