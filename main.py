@@ -2,6 +2,7 @@ import discord, json, math, schedule, time, sys, os
 from dotenv import load_dotenv
 from datetime import datetime
 import urllib.request as urlreq
+import threading
 
 # TODO get more complex info about the events, distinguish between main alerts and smaller events
 # TODO add "!alert info" parameters to let the user choose server and optional details + add argument parser for this
@@ -11,6 +12,7 @@ import urllib.request as urlreq
 # TODO clean the code (most importantly imports) and repo, hide internal files, add aditional error handling,
 # write down the README and some basic usage and functionality info + screenshots on the repo main page
 
+checking_enabled = False
 
 def getEventInfo(serverNumber):
     try:
@@ -79,7 +81,7 @@ async def sendAlertInfo(message, server):
     try:
         info = getEventInfo(serverDict[server])
     except:
-        await message.channel.send("Wrong server name") # More like "something happened in get EventInfo"!!!
+        await message.channel.send("Wrong server name") # More like "something happened in getEventInfo"!!!
         return
     if (info == "N/A"):
         await message.channel.send("No info available")
@@ -106,8 +108,19 @@ async def sendHelpInfo(message):
     await message.channel.send(embed=help_embed)
 
 
+async def sendDevMessages(message, contents):
+    print("{0} {1}".format(getTime(), contents))
+    await message.channel.send(contents)
+
 def getTime():
     return datetime.now().strftime("[%H:%M:%S]:")
+
+
+def background_check():
+    while checking_enabled:
+        print("Checking current events")
+        time.sleep(5)
+
 
 def main():
     load_dotenv()
@@ -139,6 +152,18 @@ def main():
                 await sendAlertInfo(message, "Cobalt")
             else:
                 await sendAlertInfo(message, server)
+
+        bg_thread = threading.Thread(name='background', target=background_check)
+        if message.content == "?enable notifications" or message.content == "?en":
+            global checking_enabled
+            checking_enabled = True
+            if not bg_thread.is_alive():
+                bg_thread.start()
+            await sendDevMessages(message, "Automatic event check has been enabled")
+
+        if message.content == "?disable notifications" or message.content == "?dn":
+            checking_enabled = False
+            await sendDevMessages(message, "Automatic event check has been disabled")
 
     client.run(TOKEN)
 
