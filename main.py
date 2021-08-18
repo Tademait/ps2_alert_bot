@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import urllib.request as urlreq
 import threading
+import asyncio
 
 # TODO get more complex info about the events, distinguish between main alerts and smaller events
 # TODO add "!alert info" parameters to let the user choose server and optional details + add argument parser for this
@@ -11,6 +12,17 @@ import threading
 # a place to store the users preferred server ID to check on
 # TODO clean the code (most importantly imports) and repo, hide internal files, add aditional error handling,
 # write down the README and some basic usage and functionality info + screenshots on the repo main page
+# add a restart command for reloading the script or modules
+# add role checking to enable some of the commands only for specific roles
+# register service for API access at the daybreak server
+# clean the background threads (especially the old threading one) and check if create_task works properly
+# make some epic usable and programmer-friendly API / [whatever it should be called] so that the adding of new functionality
+# to the app is as simple as possible (generalised printing through arguements, generalised grabbing of info from api...)
+
+# QoL IDEAS:
+#   check if there's map queue in game and if so, for which server
+#   check which servers are currently unlocked and locked
+#   add time remaining in addition to time elapsed (or just keep remaining time till the end of alert)
 
 checking_enabled = False
 
@@ -25,15 +37,19 @@ def getEventInfo(serverNumber):
     #except urlreq.timeout:
     #   print("Request timed out while retrieving the data from API")
     #    return "N/A"
-    for p in data['world_event_list']:
-        event_id = int(p['metagame_event_id'])
-        timestamp = int(p['timestamp'])
-        event_state = p["metagame_event_state_name"]
-        factionPercentage = []
-        factionPercentage.append("🟦 NC: " + p["faction_nc"][0:4] + "%")
-        factionPercentage.append("🟥 TR: " + p["faction_tr"][0:4] + "%")
-        factionPercentage.append("🟪 VS: " + p["faction_vs"][0:4] + "%")
-
+    try:
+        for p in data['world_event_list']:
+            event_id = int(p['metagame_event_id'])
+            timestamp = int(p['timestamp'])
+            event_state = p["metagame_event_state_name"]
+            factionPercentage = []
+            factionPercentage.append("🟦 NC: " + p["faction_nc"][0:4] + "%")
+            factionPercentage.append("🟥 TR: " + p["faction_tr"][0:4] + "%")
+            factionPercentage.append("🟪 VS: " + p["faction_vs"][0:4] + "%")
+    except KeyError:
+        console_print("An error occured while parsing the json file")
+        print(data)
+        return "N/A"
     try:
         filepath = os.path.dirname(os.path.abspath(__file__))
         filepath = os.path.join(filepath, "metagame_event.json")
@@ -71,12 +87,12 @@ async  def sendHelloInfo(message):
 async def sendAlertInfo(message, server):
     orange = discord.colour.Color.from_rgb(236, 88, 9)
     serverDict = {
-        "Connery"   : 1,
-        "Cobalt"    : 13,
-        "Miller"    : 10,
-        "Emerald"   : 17,
-        "SolTech"   : 40,
-        "Jaeger"    : 19
+        "connery"   : 1,
+        "cobalt"    : 13,
+        "miller"    : 10,
+        "emerald"   : 17,
+        "soltech"   : 40,
+        "jaeger"    : 19
     }
     try:
         info = getEventInfo(serverDict[server])
@@ -115,12 +131,24 @@ async def sendDevMessages(message, contents):
 def getTime():
     return datetime.now().strftime("[%H:%M:%S]:")
 
+def console_print(contents):
+    print("{0} {1}".format(getTime()), contents)
 
-def background_check():
+def background_check(message):
+    global something_is_up
     while checking_enabled:
-        print("Checking current events")
+        print("standard threading loop is running too")
         time.sleep(5)
 
+
+async def background_check_asynchronous(message):
+    while checking_enabled:
+        print("henlo, async mrdka bezi")
+        await asyncio.sleep(120)
+        info = getEventInfo(13)
+        if info != "N/A" and info != "ENDED":
+            print("info contains: " + str(info))
+            await sendAlertInfo(message, "cobalt")
 
 def main():
     load_dotenv()
@@ -147,16 +175,17 @@ def main():
             await sendHelpInfo(message)
 
         if message.content.startswith("?alert info"):
-            server = str(message.content).split()[-1]
+            server = str(message.content).split()[-1].lower()
             if server == "info":
-                await sendAlertInfo(message, "Cobalt")
+                await sendAlertInfo(message, "cobalt")
             else:
                 await sendAlertInfo(message, server)
 
-        bg_thread = threading.Thread(name='background', target=background_check)
+        bg_thread = threading.Thread(name='background', target=background_check, args=[message])
         if message.content == "?enable notifications" or message.content == "?en":
             global checking_enabled
             checking_enabled = True
+            asyncio.create_task(background_check_asynchronous(message)) # edit to make sure the create_task method is not spawning more threads each time the check is activated!!
             if not bg_thread.is_alive():
                 bg_thread.start()
             await sendDevMessages(message, "Automatic event check has been enabled")
@@ -164,7 +193,6 @@ def main():
         if message.content == "?disable notifications" or message.content == "?dn":
             checking_enabled = False
             await sendDevMessages(message, "Automatic event check has been disabled")
-
     client.run(TOKEN)
 
 
