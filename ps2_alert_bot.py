@@ -32,7 +32,7 @@ def getEventInfo(serverNumber):
                 f"https://census.daybreakgames.com/get/ps2:v2/world_event/?type=METAGAME&world_id={serverNumber}&c:limit=1", timeout=10) as url:
             data = json.loads(url.read().decode())
     except (urlreq.HTTPError, urlreq.URLError) as error:
-        print("An error occured while retrieving the data from API: {error}")
+        print(f"An error occured while retrieving the data from API: {error}")
         return "N/A"
     #except urlreq.timeout:
     #   print("Request timed out while retrieving the data from API")
