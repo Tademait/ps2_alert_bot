@@ -5,25 +5,6 @@ import urllib.request as urlreq
 import threading
 import asyncio
 
-# TODO get more complex info about the events, distinguish between main alerts and smaller events
-# TODO add "!alert info" parameters to let the user choose server and optional details + add argument parser for this
-# TODO in addition to parsing more info, edit the embed messages and their looks (possibly use custom emotes and images)
-# TODO add timer to periodically check for updates on the main alerts and game news (this will probably also need
-# a place to store the users preferred server ID to check on
-# TODO clean the code (most importantly imports) and repo, hide internal files, add aditional error handling,
-# write down the README and some basic usage and functionality info + screenshots on the repo main page
-# add a restart command for reloading the script or modules
-# add role checking to enable some of the commands only for specific roles
-# register service for API access at the daybreak server
-# clean the background threads (especially the old threading one) and check if create_task works properly
-# make some epic usable and programmer-friendly API / [whatever it should be called] so that the adding of new functionality
-# to the app is as simple as possible (generalised printing through arguements, generalised grabbing of info from api...)
-
-# QoL IDEAS:
-#   check if there's map queue in game and if so, for which server
-#   check which servers are currently unlocked and locked
-#   add time remaining in addition to time elapsed (or just keep remaining time till the end of alert)
-
 checking_enabled = False
 
 def getEventInfo(serverNumber):
